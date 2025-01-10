@@ -1,7 +1,8 @@
+version: 2
 builds:
   - binary: trufflehog
     ldflags:
-      - -X 'github.com/trufflesecurity/trufflehog/v3/pkg/version.BuildVersion={{ .Version }}'
+      - -s -w -X 'github.com/trufflesecurity/trufflehog/v3/pkg/version.BuildVersion={{ .Version }}'
     env: [CGO_ENABLED=0]
     goos:
     - linux
@@ -87,7 +88,7 @@ docker_manifests:
     - ghcr.io/trufflesecurity/{{ .ProjectName }}:{{ .Version }}-amd64
     - ghcr.io/trufflesecurity/{{ .ProjectName }}:{{ .Version }}-arm64v8
 brews:
-  - tap:
+  - repository:
       owner: trufflesecurity
       name: homebrew-trufflehog
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
@@ -96,3 +97,15 @@ brews:
     homepage: "https://github.com/trufflesecurity/trufflehog"
     install: |
       bin.install "trufflehog"
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args: 
+      - "sign-blob"
+      - "--oidc-issuer=https://token.actions.githubusercontent.com"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
